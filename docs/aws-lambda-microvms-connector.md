@@ -85,9 +85,10 @@ The connector has two setup surfaces. Contro1 owns approval, routing, signed cal
 Create the operational control layer first:
 
 - Contro1 account and organization.
-- API key for the MicroVM connector.
-- Webhook secret for signed callbacks.
-- Reviewer routing: required role, department, Slack/Teams destination, SLA, and escalation.
+- Open **Settings -> APIs & Webhooks**.
+- Create an API key for the MicroVM connector and store it in the connector as `CONTRO1_API_KEY`.
+- Reveal or rotate the organization webhook secret and store it in the connector as `CONTRO1_WEBHOOK_SECRET`.
+- Configure reviewer routing: required role, department, Slack/Teams destination, SLA, and escalation.
 - Approval policy for risky MicroVM actions:
   - shell access
   - production execution roles
@@ -100,9 +101,22 @@ Create the operational control layer first:
   - `ALLOWED_EXECUTION_ROLE_ARNS`
   - `PRODUCTION_EXECUTION_ROLE_ARNS`
   - `ALLOWED_TOKEN_PORTS`
-- Public HTTPS URL for this connector so Contro1 can send the signed approval decision back to it. In the examples, the callback route is `/contro1/callback`, so a production URL might look like `https://microvms.example.com/contro1/callback`.
 
 Contro1 does not need AWS root access. It needs a dedicated connector role and enough metadata to make approval and audit decisions.
+
+### Prepare The Connector Host
+
+The callback URL is not a separate setting in the Contro1 UI. The connector sends it with each approval request.
+
+- Deploy this connector as a small HTTPS service.
+- Set `PUBLIC_BASE_URL` to the connector host, for example `https://microvms.example.com`.
+- The examples expose a callback route at `/contro1/callback`.
+- The connector sends `https://microvms.example.com/contro1/callback` to Contro1 when it creates an approval request.
+- Contro1 sends the signed approval decision to that URL.
+- The connector verifies the signature with `CONTRO1_WEBHOOK_SECRET`.
+- Only after an approved signed callback does the connector call the AWS MicroVM API.
+
+For local testing, use `SIMULATE_AWS=true`. If you want to test real callbacks while developing locally, expose the local server with a tunnel and set `PUBLIC_BASE_URL` to the tunnel URL.
 
 ### Prepare In AWS
 
