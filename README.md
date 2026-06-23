@@ -29,32 +29,63 @@ Contro1 decides whether each action is auto-approved, routed to a human, or bloc
 
 ## What You Need To Prepare
 
-You can read the guide and run the examples in mock mode without any AWS setup. For a real deployment, prepare both Contro1 and AWS.
+You can read the guide and run the examples in mock mode without any AWS setup. For a real deployment, there are three pieces:
+
+1. **Contro1** decides who must approve and sends a signed approval response.
+2. **This connector** receives the signed answer and then calls AWS.
+3. **AWS** runs the MicroVM and issues endpoint or shell tokens.
+
+The connector is the bridge. It is not configured inside Contro1 as a hosted app. You run it in your own environment.
 
 ### In Contro1
 
 - Create a Contro1 account and organization.
 - Open **Settings -> APIs & Webhooks**.
-- Create a Contro1 API key for this connector and copy it into the connector as `CONTRO1_API_KEY`.
-- Reveal or rotate the organization webhook secret and copy it into the connector as `CONTRO1_WEBHOOK_SECRET`.
+- Create a Contro1 API key for this connector.
+- Copy the API key into the connector environment as `CONTRO1_API_KEY`.
+- Reveal or rotate the organization webhook secret.
+- Copy the webhook secret into the connector environment as `CONTRO1_WEBHOOK_SECRET`.
 - Choose where approvals go in Contro1: dashboard, Slack, Microsoft Teams, or your configured operator workflow.
 - Define the reviewer role for high-risk MicroVM actions, for example `security`, `platform`, or `cloud-admin`.
-- Decide the default policy:
-  - which agents are allowed to launch MicroVMs
-  - which MicroVM images are approved
-  - which execution roles are allowed
-  - which token ports are allowed
-  - max auto-approved duration
-  - whether shell access always requires approval
+- Decide who reviews requests from this API key. You can use API key routing, departments, roles, Slack, Teams, and SLA settings.
 - Keep the connector API key and webhook secret outside source control.
 
 ### In Your Connector Deployment
 
-- Host this connector somewhere reachable by Contro1 over HTTPS, such as Cloud Run, ECS, Fly.io, Render, a VM, or another service host.
-- Set `PUBLIC_BASE_URL` to that connector host, for example `https://microvms.example.com`.
-- The connector code builds the callback URL from that value: `PUBLIC_BASE_URL + /contro1/callback`.
-- The user does not configure this callback URL inside the Contro1 UI. The connector includes it in each Contro1 approval request as `callback_url` / `webhook_url`.
-- When the operator approves or denies the request, Contro1 sends a signed POST back to that connector callback route. The connector verifies the signature with `CONTRO1_WEBHOOK_SECRET`, then calls or skips the AWS MicroVM API.
+Run this repository as a small server. It can run on Cloud Run, ECS, Fly.io, Render, a VM, Kubernetes, or any HTTPS service host.
+
+The flow is:
+
+1. Your agent calls this connector, for example `POST /microvms/run-request`.
+2. The connector checks the request against its policy.
+3. If a human must approve, the connector creates a Contro1 request.
+4. In that request, the connector includes the address where Contro1 should send the answer: `https://your-connector-host/contro1/callback`.
+5. The operator approves or denies in Contro1, Slack, or Teams.
+6. Contro1 sends a signed POST to `/contro1/callback` on your connector.
+7. The connector verifies the signature with `CONTRO1_WEBHOOK_SECRET`.
+8. If approved, the connector calls AWS. If denied or invalid, it does not call AWS.
+
+Set these environment variables on the connector:
+
+```bash
+CONTRO1_API_KEY=cc_live_...
+CONTRO1_WEBHOOK_SECRET=whsec_...
+PUBLIC_BASE_URL=https://your-connector-host.example.com
+```
+
+`PUBLIC_BASE_URL` is simply where this connector is hosted. If `PUBLIC_BASE_URL=https://microvms.example.com`, the connector tells Contro1 to send the approval answer to `https://microvms.example.com/contro1/callback`.
+
+For local testing with real approval answers from Contro1, expose your local connector with a tunnel such as ngrok or Cloudflare Tunnel and use that tunnel URL as `PUBLIC_BASE_URL`.
+
+Connector policy lives in environment variables or your deployment config:
+
+- `ALLOWED_AGENT_IDS`: which agents may request MicroVMs
+- `ALLOWED_IMAGE_ARNS`: which MicroVM images are approved
+- `ALLOWED_EXECUTION_ROLE_ARNS`: which execution roles are allowed
+- `PRODUCTION_EXECUTION_ROLE_ARNS`: roles that require stricter review
+- `ALLOWED_TOKEN_PORTS`: ports that can receive endpoint tokens
+- `MAX_AUTO_APPROVE_DURATION_SECONDS`: longest launch allowed without review
+- `MAX_TOKEN_TTL_SECONDS`: longest endpoint token allowed without review
 
 ### In AWS
 
@@ -78,7 +109,7 @@ You can read the guide and run the examples in mock mode without any AWS setup. 
 
 ### Connector Environment
 
-Start with `SIMULATE_AWS=true` for local testing. In that mode, `PUBLIC_BASE_URL` can be a local tunnel URL such as ngrok or Cloudflare Tunnel if you want to test real Contro1 callbacks.
+Start with `SIMULATE_AWS=true` for local testing. In that mode, `PUBLIC_BASE_URL` can be a local tunnel URL such as ngrok or Cloudflare Tunnel if you want to test real approval answers from Contro1.
 
 Switch to `SIMULATE_AWS=false` only after AWS credentials, IAM roles, images, and SDK support are ready.
 
