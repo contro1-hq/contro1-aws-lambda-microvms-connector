@@ -54,18 +54,23 @@ This deployed server is the bridge between Contro1 and AWS. You run it in your o
 
 ### In Your Connector Deployment
 
-Deploy this repository as a small HTTPS server. It can run on Cloud Run, ECS, Fly.io, Render, a VM, Kubernetes, or any HTTPS service host.
+Deploy one of the example servers in this repository:
+
+- TypeScript/Express: `examples/typescript/src/server.ts`
+- Python/Flask: `examples/python/app.py`
+
+That server can run on Cloud Run, ECS, Fly.io, Render, a VM, Kubernetes, or any HTTPS service host.
 
 The flow is:
 
-1. Your agent calls this connector, for example `POST /microvms/run-request`.
-2. The connector checks the request against its policy.
-3. If a human must approve, the connector creates a Contro1 request.
-4. In that request, the connector includes the address where Contro1 should send the answer: `https://your-connector-host/contro1/callback`.
+1. Your agent calls the deployed example server, for example `POST /microvms/run-request`.
+2. The server checks the request against its policy.
+3. If a human must approve, the server creates a Contro1 request.
+4. In that request, the server includes the address where Contro1 should send the answer: `https://your-connector-host/contro1/callback`.
 5. The operator approves or denies in Contro1, Slack, or Teams.
-6. Contro1 sends a signed POST to `/contro1/callback` on your connector.
-7. The connector verifies the signature with `CONTRO1_WEBHOOK_SECRET`.
-8. If approved, the connector calls AWS. If denied or invalid, it does not call AWS.
+6. Contro1 sends a signed POST to `/contro1/callback` on your server.
+7. The server verifies the signature with `CONTRO1_WEBHOOK_SECRET`.
+8. If approved, the server calls AWS. If denied or invalid, it does not call AWS.
 
 Set these environment variables on the deployed server:
 
@@ -73,6 +78,24 @@ Set these environment variables on the deployed server:
 CONTRO1_API_KEY=cc_live_...
 CONTRO1_WEBHOOK_SECRET=whsec_...
 PUBLIC_BASE_URL=https://your-connector-host.example.com
+```
+
+Run the TypeScript example locally:
+
+```bash
+cd examples/typescript
+npm install
+npm run dev
+```
+
+Run the Python example locally:
+
+```bash
+cd examples/python
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python app.py
 ```
 
 `PUBLIC_BASE_URL` is simply where this server is hosted. If `PUBLIC_BASE_URL=https://microvms.example.com`, the server tells Contro1 to send the approval answer to `https://microvms.example.com/contro1/callback`.

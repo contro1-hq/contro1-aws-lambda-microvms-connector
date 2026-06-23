@@ -111,7 +111,12 @@ Contro1 does not need AWS root access. The deployed server from this repo should
 
 ### Prepare The Deployed Server
 
-Run this repository as a small HTTPS server. This server is the bridge between Contro1 and AWS.
+Run one of the example servers in this repository:
+
+- TypeScript/Express: `examples/typescript/src/server.ts`
+- Python/Flask: `examples/python/app.py`
+
+This server is the bridge between Contro1 and AWS. It can run on Cloud Run, ECS, Fly.io, Render, a VM, Kubernetes, or any HTTPS service host.
 
 The approval loop works like this:
 
@@ -130,6 +135,24 @@ Required server environment:
 CONTRO1_API_KEY=cc_live_...
 CONTRO1_WEBHOOK_SECRET=whsec_...
 PUBLIC_BASE_URL=https://your-connector-host.example.com
+```
+
+Run the TypeScript example locally:
+
+```bash
+cd examples/typescript
+npm install
+npm run dev
+```
+
+Run the Python example locally:
+
+```bash
+cd examples/python
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python app.py
 ```
 
 Example:
