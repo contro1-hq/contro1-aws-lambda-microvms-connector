@@ -134,7 +134,7 @@ Operational rule:
 
 ## Unmanaged MicroVM Discovery
 
-Product phase should list AWS MicroVMs and images and identify:
+Production deployments should list AWS MicroVMs and images and identify:
 
 - MicroVMs without `contro1_request_id`.
 - images without owner.

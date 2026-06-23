@@ -152,15 +152,6 @@ aws.microvm.bypass.detected
 aws.microvm.unmanaged.detected
 ```
 
-## Product Roadmap
-
-The public connector proves the governed launcher pattern. The Contro1 product phase should add:
-
-- AWS account settings: account id, role ARN, external id, region, allowed images, allowed roles.
-- Unmanaged MicroVM discovery: list MicroVMs/images, find missing `contro1_request_id`, unknown owners, risky roles, shell-enabled sessions, broad tokens.
-- Dashboard: MicroVM ID, agent, owner, image, execution role, network, shell, token scope, duration, approval status, evidence status, emergency terminate.
-- Evidence packets: Contro1 request, reviewer, AWS params, AWS response, CloudTrail correlation, runtime events.
-
 ## Important Limitation
 
 Contro1 cannot cleanly stop an already-running command inside a MicroVM unless the runtime or tool gateway is instrumented. The launcher governs lifecycle, endpoint tokens, and shell access. A future runtime shim governs bash, file, network, and tool calls after the MicroVM starts.
