@@ -14,7 +14,9 @@ Repository description:
 
 ## What This Connector Does
 
-This connector is a **Governed MicroVM Launcher and Token Broker**. Agent runtimes and internal apps call this connector instead of calling AWS directly.
+This connector is the small server in this repository. You deploy it in your own cloud account or hosting environment. Agent runtimes and internal apps call this server instead of calling AWS directly.
+
+The server acts as a **Governed MicroVM Launcher and Token Broker**. It checks each request, asks Contro1 for approval when needed, and only then calls AWS.
 
 Governed actions:
 
@@ -31,20 +33,20 @@ Contro1 decides whether each action is auto-approved, routed to a human, or bloc
 
 You can read the guide and run the examples in mock mode without any AWS setup. For a real deployment, there are three pieces:
 
-1. **Contro1** decides who must approve and sends a signed approval response.
-2. **This connector** receives the signed answer and then calls AWS.
+1. **Contro1** routes the approval decision and sends a signed approval response.
+2. **This connector** is the server from this repo. It receives the signed answer and then calls AWS.
 3. **AWS** runs the MicroVM and issues endpoint or shell tokens.
 
-The connector is the bridge. It is not configured inside Contro1 as a hosted app. You run it in your own environment.
+This deployed server is the bridge between Contro1 and AWS. You run it in your own environment.
 
 ### In Contro1
 
 - Create a Contro1 account and organization.
 - Open **Settings -> APIs & Webhooks**.
-- Create a Contro1 API key for this connector.
-- Copy the API key into the connector environment as `CONTRO1_API_KEY`.
+- Create a Contro1 API key named something like `Lambda MicroVMs connector`.
+- Copy the API key value into the deployed server environment as `CONTRO1_API_KEY`.
 - Reveal or rotate the organization webhook secret.
-- Copy the webhook secret into the connector environment as `CONTRO1_WEBHOOK_SECRET`.
+- Copy the webhook secret into the deployed server environment as `CONTRO1_WEBHOOK_SECRET`.
 - Choose where approvals go in Contro1: dashboard, Slack, Microsoft Teams, or your configured operator workflow.
 - Define the reviewer role for high-risk MicroVM actions, for example `security`, `platform`, or `cloud-admin`.
 - Decide who reviews requests from this API key. You can use API key routing, departments, roles, Slack, Teams, and SLA settings.
@@ -52,7 +54,7 @@ The connector is the bridge. It is not configured inside Contro1 as a hosted app
 
 ### In Your Connector Deployment
 
-Run this repository as a small server. It can run on Cloud Run, ECS, Fly.io, Render, a VM, Kubernetes, or any HTTPS service host.
+Deploy this repository as a small HTTPS server. It can run on Cloud Run, ECS, Fly.io, Render, a VM, Kubernetes, or any HTTPS service host.
 
 The flow is:
 
@@ -65,7 +67,7 @@ The flow is:
 7. The connector verifies the signature with `CONTRO1_WEBHOOK_SECRET`.
 8. If approved, the connector calls AWS. If denied or invalid, it does not call AWS.
 
-Set these environment variables on the connector:
+Set these environment variables on the deployed server:
 
 ```bash
 CONTRO1_API_KEY=cc_live_...
@@ -73,11 +75,11 @@ CONTRO1_WEBHOOK_SECRET=whsec_...
 PUBLIC_BASE_URL=https://your-connector-host.example.com
 ```
 
-`PUBLIC_BASE_URL` is simply where this connector is hosted. If `PUBLIC_BASE_URL=https://microvms.example.com`, the connector tells Contro1 to send the approval answer to `https://microvms.example.com/contro1/callback`.
+`PUBLIC_BASE_URL` is simply where this server is hosted. If `PUBLIC_BASE_URL=https://microvms.example.com`, the server tells Contro1 to send the approval answer to `https://microvms.example.com/contro1/callback`.
 
-For local testing with real approval answers from Contro1, expose your local connector with a tunnel such as ngrok or Cloudflare Tunnel and use that tunnel URL as `PUBLIC_BASE_URL`.
+For local testing with real approval answers from Contro1, expose your local server with a tunnel such as ngrok or Cloudflare Tunnel and use that tunnel URL as `PUBLIC_BASE_URL`.
 
-Connector policy lives in environment variables or your deployment config:
+The policy for this server lives in environment variables or your deployment config:
 
 - `ALLOWED_AGENT_IDS`: which agents may request MicroVMs
 - `ALLOWED_IMAGE_ARNS`: which MicroVM images are approved

@@ -92,7 +92,7 @@ This connector
 AWS Lambda MicroVMs
 ```
 
-Contro1 owns approval, routing, signed approval responses, and audit evidence. The connector owns the policy check and the AWS call. AWS owns the MicroVM image, IAM roles, lifecycle APIs, endpoint tokens, shell tokens, and cloud logs.
+Contro1 owns approval routing, signed approval responses, and audit evidence. The connector is the server from this repo: it owns the policy check and the AWS call. AWS owns the MicroVM image, IAM roles, lifecycle APIs, endpoint tokens, shell tokens, and cloud logs.
 
 ### Prepare In Contro1
 
@@ -100,31 +100,31 @@ Create the operational control layer first:
 
 - Contro1 account and organization.
 - Open **Settings -> APIs & Webhooks**.
-- Create an API key for the MicroVM connector.
-- Store that key in the connector as `CONTRO1_API_KEY`.
+- Create an API key named something like `Lambda MicroVMs connector`.
+- Store that key in the deployed server environment as `CONTRO1_API_KEY`.
 - Reveal or rotate the organization webhook secret.
-- Store that secret in the connector as `CONTRO1_WEBHOOK_SECRET`.
+- Store that secret in the deployed server environment as `CONTRO1_WEBHOOK_SECRET`.
 - Configure where approval requests go: dashboard, Slack, Teams, departments, roles, SLA, and escalation.
 - Decide which reviewer role should handle high-risk MicroVM requests, such as `security`, `platform`, or `cloud-admin`.
 
-Contro1 does not need AWS root access. It needs a dedicated connector role and enough metadata to make approval and audit decisions.
+Contro1 does not need AWS root access. The deployed server from this repo should use a dedicated AWS role, and Contro1 should receive enough metadata to make approval and audit decisions.
 
-### Prepare This Connector
+### Prepare The Deployed Server
 
-Run this repository as a small HTTPS server. It is the bridge between Contro1 and AWS.
+Run this repository as a small HTTPS server. This server is the bridge between Contro1 and AWS.
 
 The approval loop works like this:
 
-1. An agent asks the connector to launch a MicroVM or create a token.
-2. The connector decides whether this can run automatically, must ask a human, or must be blocked.
-3. If a human must approve, the connector creates a Contro1 request.
-4. The connector includes the address where Contro1 should send the answer: `PUBLIC_BASE_URL + /contro1/callback`.
+1. An agent asks this server to launch a MicroVM or create a token.
+2. The server decides whether this can run automatically, must ask a human, or must be blocked.
+3. If a human must approve, the server creates a Contro1 request.
+4. The server includes the address where Contro1 should send the answer: `PUBLIC_BASE_URL + /contro1/callback`.
 5. A person approves or denies in Contro1, Slack, or Teams.
-6. Contro1 sends a signed POST back to the connector.
-7. The connector verifies the signature.
-8. Only then does the connector call `RunMicrovm`, `CreateMicrovmAuthToken`, or another AWS action.
+6. Contro1 sends a signed POST back to this server.
+7. The server verifies the signature.
+8. Only then does the server call `RunMicrovm`, `CreateMicrovmAuthToken`, or another AWS action.
 
-Required connector environment:
+Required server environment:
 
 ```bash
 CONTRO1_API_KEY=cc_live_...
@@ -144,9 +144,9 @@ The connector exposes:
 POST https://microvms.example.com/contro1/callback
 ```
 
-That route is where Contro1 sends the signed approval result back to the connector.
+That route is where Contro1 sends the signed approval result back to the server.
 
-Connector policy is configured in the connector, not in the Contro1 UI:
+Policy for this server is configured in environment variables or deployment config:
 
 - `ALLOWED_AGENT_IDS`
 - `ALLOWED_IMAGE_ARNS`
