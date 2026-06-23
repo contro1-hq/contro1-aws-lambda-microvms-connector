@@ -6,7 +6,11 @@ Repository description:
 
 > Governed launcher and token broker for AWS Lambda MicroVMs, adding Contro1 approvals, audit evidence, and bypass detection for AI execution sandboxes.
 
-Website: https://contro1.com
+## Links
+
+- Website: https://contro1.com
+- Documentation: https://contro1.com/docs
+- Agent Integration Kit: https://contro1.com/agent-kit
 
 ## What This Connector Does
 
