@@ -78,6 +78,72 @@ Suspend, resume, and terminate are controlled actions. Emergency terminate may b
 
 ## Protocol Mapping
 
+## Setup Responsibilities
+
+The connector has two setup surfaces. Contro1 owns approval, routing, signed callbacks, and audit evidence. AWS owns the actual MicroVM image, IAM roles, execution permissions, lifecycle APIs, and cloud logs.
+
+### Prepare In Contro1
+
+Create the operational control layer first:
+
+- Contro1 account and organization.
+- API key for the MicroVM connector.
+- Webhook secret for signed callbacks.
+- Reviewer routing: required role, department, Slack/Teams destination, SLA, and escalation.
+- Approval policy for risky MicroVM actions:
+  - shell access
+  - production execution roles
+  - internet or VPC egress
+  - broad or long-lived endpoint tokens
+  - unknown agents or images
+- Allowed registry values for the connector:
+  - `ALLOWED_AGENT_IDS`
+  - `ALLOWED_IMAGE_ARNS`
+  - `ALLOWED_EXECUTION_ROLE_ARNS`
+  - `PRODUCTION_EXECUTION_ROLE_ARNS`
+  - `ALLOWED_TOKEN_PORTS`
+- Public HTTPS callback URL, for example `https://microvms.example.com/contro1/callback`.
+
+Contro1 does not need AWS root access. It needs a dedicated connector role and enough metadata to make approval and audit decisions.
+
+### Prepare In AWS
+
+Create the cloud execution surface:
+
+- Confirm Lambda MicroVMs availability in the target region.
+- Build or select the MicroVM image that agents may run.
+- Create a dedicated IAM principal for the Contro1 connector/launcher.
+- Grant the connector only the MicroVM actions it needs:
+  - `lambda:RunMicrovm`
+  - `lambda:GetMicrovm`
+  - `lambda:ListMicrovms`
+  - `lambda:SuspendMicrovm`
+  - `lambda:ResumeMicrovm`
+  - `lambda:TerminateMicrovm`
+  - `lambda:CreateMicrovmAuthToken`
+  - `lambda:CreateMicrovmShellAuthToken` only if shell is allowed
+- Create constrained execution roles for MicroVM workloads.
+- Remove direct lifecycle/token permissions from agents, developers, and CI roles that should be governed.
+- Enable CloudTrail for MicroVM API activity to detect direct AWS calls outside Contro1.
+- Enable CloudWatch/runtime logs if you need stdout/stderr or application-level evidence.
+- Use tags or `runHookPayload` metadata for `contro1_request_id`, agent id, owner, environment, and correlation id.
+
+### Local vs Production Mode
+
+Use `SIMULATE_AWS=true` while evaluating the repo, testing policy behavior, and verifying Contro1 approval callbacks.
+
+Use `SIMULATE_AWS=false` only when:
+
+- the AWS account and region support Lambda MicroVMs
+- the connector IAM role is configured
+- approved image ARNs and execution role ARNs are known
+- CloudTrail/logging decisions are made
+- the installed AWS SDK or boto3 version exposes the MicroVM APIs
+
+With mock mode, the connector proves the Contro1 workflow. With production mode, it also calls AWS.
+
+## Protocol Mapping
+
 Use Contro1 Integration Protocol v1:
 
 ```json

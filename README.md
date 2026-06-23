@@ -27,6 +27,51 @@ Governed actions:
 
 Contro1 decides whether each action is auto-approved, routed to a human, or blocked. Every decision and AWS outcome is recorded as audit evidence.
 
+## What You Need To Prepare
+
+You can read the guide and run the examples in mock mode without any AWS setup. For a real deployment, prepare both Contro1 and AWS.
+
+### In Contro1
+
+- Create a Contro1 account and organization.
+- Create a Contro1 API key for this connector.
+- Configure a webhook secret and set `CONTRO1_WEBHOOK_SECRET` in the connector.
+- Choose where approvals go: dashboard, Slack, Microsoft Teams, or your configured operator workflow.
+- Define the reviewer role for high-risk MicroVM actions, for example `security`, `platform`, or `cloud-admin`.
+- Decide the default policy:
+  - which agents are allowed to launch MicroVMs
+  - which MicroVM images are approved
+  - which execution roles are allowed
+  - which token ports are allowed
+  - max auto-approved duration
+  - whether shell access always requires approval
+- Set a public HTTPS callback URL for the connector, for example `https://microvms.example.com/contro1/callback`.
+- Keep the connector API key and webhook secret outside source control.
+
+### In AWS
+
+- Confirm AWS Lambda MicroVMs is available in your AWS account and target region.
+- Create or select the MicroVM image your agents are allowed to run.
+- Create a dedicated IAM role for the Contro1 connector/launcher.
+- Give that connector role the minimum required MicroVM permissions:
+  - `lambda:RunMicrovm`
+  - `lambda:GetMicrovm`
+  - `lambda:ListMicrovms`
+  - `lambda:SuspendMicrovm`
+  - `lambda:ResumeMicrovm`
+  - `lambda:TerminateMicrovm`
+  - `lambda:CreateMicrovmAuthToken`
+  - `lambda:CreateMicrovmShellAuthToken` if shell is enabled
+- Create constrained MicroVM execution roles for the workloads themselves.
+- Remove direct MicroVM lifecycle and token permissions from agents, developers, and CI jobs that should be governed by Contro1.
+- Enable CloudTrail logging for MicroVM API activity so direct bypass calls can be detected.
+- Enable CloudWatch/runtime logging for the MicroVM execution role if you need runtime evidence.
+- Tag or pass metadata such as `contro1_request_id`, agent id, owner, environment, and correlation id.
+
+### Connector Environment
+
+Start with `SIMULATE_AWS=true` for local testing. Switch to `SIMULATE_AWS=false` only after AWS credentials, IAM roles, images, and SDK support are ready.
+
 ## Why MicroVM Isolation Is Not Enough
 
 MicroVMs are a strong sandbox primitive, but they do not answer the governance questions:
