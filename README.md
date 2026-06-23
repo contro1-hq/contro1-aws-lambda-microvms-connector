@@ -14,7 +14,7 @@ Repository description:
 
 ## What This Connector Does
 
-The MVP is a **Governed MicroVM Launcher and Token Broker**. Agent runtimes and internal apps call this connector instead of calling AWS directly.
+This connector is a **Governed MicroVM Launcher and Token Broker**. Agent runtimes and internal apps call this connector instead of calling AWS directly.
 
 Governed actions:
 
@@ -45,7 +45,7 @@ You can read the guide and run the examples in mock mode without any AWS setup. 
   - which token ports are allowed
   - max auto-approved duration
   - whether shell access always requires approval
-- Set a public HTTPS callback URL for the connector, for example `https://microvms.example.com/contro1/callback`.
+- Expose the connector on a public HTTPS URL so Contro1 can send the signed approval decision back to it. In the examples, the callback route is `/contro1/callback`, so a production URL might look like `https://microvms.example.com/contro1/callback`.
 - Keep the connector API key and webhook secret outside source control.
 
 ### In AWS

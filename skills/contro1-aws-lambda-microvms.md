@@ -11,7 +11,7 @@ Use this skill when integrating Contro1 with AWS Lambda MicroVMs or AI execution
 
 AWS Lambda MicroVMs isolate AI-generated code. Contro1 governs the decision to run it.
 
-The first integration should be a **Governed MicroVM Launcher and Token Broker**, not a runtime shim. Put Contro1 before:
+Start with a **Governed MicroVM Launcher and Token Broker**, not a runtime shim. Put Contro1 before:
 
 - `RunMicrovm`
 - `CreateMicrovmAuthToken`

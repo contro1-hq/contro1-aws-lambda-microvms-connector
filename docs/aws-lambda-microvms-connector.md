@@ -44,7 +44,7 @@ Use three layers:
 - **Token broker**: governs who can reach the endpoint, which ports are allowed, and how long access lasts.
 - **Runtime shim**: later governs what the agent does after it starts.
 
-MVP scope is launcher and token broker.
+This first connector focuses on the launcher and token broker layers.
 
 ## Request Flow
 
@@ -76,8 +76,6 @@ Shell access is high-risk and always requires approval.
 
 Suspend, resume, and terminate are controlled actions. Emergency terminate may be allowed to trusted operators while still writing evidence.
 
-## Protocol Mapping
-
 ## Setup Responsibilities
 
 The connector has two setup surfaces. Contro1 owns approval, routing, signed callbacks, and audit evidence. AWS owns the actual MicroVM image, IAM roles, execution permissions, lifecycle APIs, and cloud logs.
@@ -102,7 +100,7 @@ Create the operational control layer first:
   - `ALLOWED_EXECUTION_ROLE_ARNS`
   - `PRODUCTION_EXECUTION_ROLE_ARNS`
   - `ALLOWED_TOKEN_PORTS`
-- Public HTTPS callback URL, for example `https://microvms.example.com/contro1/callback`.
+- Public HTTPS URL for this connector so Contro1 can send the signed approval decision back to it. In the examples, the callback route is `/contro1/callback`, so a production URL might look like `https://microvms.example.com/contro1/callback`.
 
 Contro1 does not need AWS root access. It needs a dedicated connector role and enough metadata to make approval and audit decisions.
 
